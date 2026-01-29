@@ -15,6 +15,9 @@ Maths:
   2*2,2+2,2/2,2-2,2**2
 
 <script>
+  if (typeof brain === 'undefined') {
+        alert("Brain.js is load error. please refresh your web page");
+    }
   const net = new brain.recurrent.LSTM();
   const memoryKey = "Aira_M";
   const trainingDataKey = "Aira_Model";
@@ -279,6 +282,7 @@ document.getElementById("input").addEventListener("keypress",e=>{if(e.key==="Ent
 </script>
 </body>
 </html>
+
 
 
 
