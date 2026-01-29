@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Aira</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/brain.js"></script>
+</head>
+<body>
+
+<div id="chat"></div>
+<input id="input" type="text" placeholder="Mesaj yaz..." />
+<button id="sendBtn">Gönder</button>
+<a href = "info.html" id = "info">Nasıl Kullanılır</a>
+
+
+
+
+
+<script>
+  //nöronlar
+  const net = new brain.recurrent.LSTM();
+  const memoryKey = "Aira_M";
+  const trainingDataKey = "Aira_Model";
+  const vars = {};
+  let trainingData = [
+    { input: "merhaba", output: "Selam!" },
+    { input: "nasılsın", output: "İyiyim, sen nasılsın?" },
+
+
+  ];
+  
+
+  if (localStorage.getItem(trainingDataKey)) {
+    net.fromJSON(JSON.parse(localStorage.getItem(trainingDataKey)));
+
+  } else {
+    net.train(trainingData, { iterations: 100 });
+    localStorage.setItem(trainingDataKey, JSON.stringify(net.toJSON()));
+
+  }
+
+
+  function learnWord(word, definition) {
+    const memory = JSON.parse(localStorage.getItem(memoryKey) || "{}");
+    memory[word.toLowerCase()] = definition;
+    localStorage.setItem(memoryKey, JSON.stringify(memory));
+  }
+  
+
+
+  function recall(word) {
+    const memory = JSON.parse(localStorage.getItem(memoryKey) || "{}");
+    return memory[word.toLowerCase()] || null;
+  }
+
+
+  function addChat(who, text) {
+    const chat = document.getElementById("chat");
+    const div = document.createElement("div");
+    div.className = who;
+    div.textContent = (who === "user" ? "Ben: " : "Aira: ") + text;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  // mat
+  function processInput(input) {
+    input = input.replace(/\s+/g, "");
+    const assign = input.match(/^([A-Za-z]+)=([\d\+\-\*\/\^\(\)]+)$/);
+    if (assign) {
+      const [_, name, expr] = assign;
+      vars[name.toUpperCase()] = eval(expr.replace(/\^/g, "**"));
+      return `${name.toUpperCase()} = ${vars[name.toUpperCase()]}`;
+    }
+    const expr = input.replace(/[A-Za-z]+/g, match => vars[match.toUpperCase()] ?? match);
+    try { return eval(expr.replace(/\^/g, "**")); }
+    catch { return undefined; }
+  }
+
+
+//wikiden bilgi öğrenme
+  async function wikiLearn(query) {
+    try {
+      const url = `https://tr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data.extract) {
+        learnWord(query, data.extract);
+        return data.extract;
+      }
+    } catch (e) { console.log("Wiki hatası:", e); }
+    return null;
+  }
+
+
+  async function send() {
+    const inputElem = document.getElementById("input");
+    const input = inputElem.value.trim();
+    if (!input) return;
+    inputElem.value = "";
+    addChat("user", input);
+
+
+    const mathResult = processInput(input);
+    if (mathResult !== undefined) {
+      addChat("aira", mathResult);
+      return;
+    }
+
+
+    const recallResult = recall(input);
+    if (recallResult) {
+      addChat("aira", recallResult);
+      return;
+    }
+
+
+    const wikiResult = await wikiLearn(input);
+    if (wikiResult) {
+      addChat("aira", wikiResult);
+      return;
+    }
+
+    
+
+
+    if(!response){
+        await wikiLearn(input);
+
+    }
+    
+    
+    //tahmin
+    
+    
+    
+    let output;
+    try { output = net.run(input.toLowerCase()); } catch { output = null; }
+    if (output) {
+      addChat("aira", output);
+    } else {
+      const cevap = prompt("Bunu bilmiyorum, öğretir misin?");
+      if (cevap) {
+        trainingData.push({ input: input.toLowerCase(), output: cevap });
+        net.train(trainingData, { iterations: 50, log: false });
+        localStorage.setItem(trainingDataKey, JSON.stringify(net.toJSON()));
+        learnWord(input, cevap);
+        addChat("aira", "");
+      } else {
+        addChat("aira", "?");
+      }
+    }
+  }
+  
+
+document.getElementById("sendBtn").addEventListener("click",send);
+document.getElementById("input").addEventListener("keypress",e=>{if(e.key==="Enter")send();});
+
+</script>
+</body>
+</html>
