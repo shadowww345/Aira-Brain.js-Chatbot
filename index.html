@@ -159,7 +159,7 @@ Maths:
     net.fromJSON(JSON.parse(localStorage.getItem(trainingDataKey)));
 
   } else {
-    net.train(trainingData, { iterations: 100 });
+    net.train(trainingData, { iterations: 1000 });
     localStorage.setItem(trainingDataKey, JSON.stringify(net.toJSON()));
 
   }
@@ -183,7 +183,7 @@ Maths:
     const chat = document.getElementById("chat");
     const div = document.createElement("div");
     div.className = who;
-    div.textContent = (who === "user" ? "Ben: " : "Aira: ") + text;
+    div.textContent = (who === "user" ? "User: " : "Aira: ") + text;
     chat.appendChild(div);
     chat.scrollTop = chat.scrollHeight;
   }
@@ -213,7 +213,7 @@ Maths:
         learnWord(query, data.extract);
         return data.extract;
       }
-    } catch (e) { console.log("Wiki hatası:", e); }
+    } catch (e) { console.log("Wiki Error:", e); }
     return null;
   }
 
@@ -279,6 +279,7 @@ document.getElementById("input").addEventListener("keypress",e=>{if(e.key==="Ent
 </script>
 </body>
 </html>
+
 
 
 
