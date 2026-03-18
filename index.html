@@ -250,13 +250,6 @@ Maths:
     }
 
     
-
-
-    if(!response){
-        await wikiLearn(input);
-
-    }
-    
     let output;
     try { output = net.run(input.toLowerCase()); } catch { output = null; }
     if (output) {
